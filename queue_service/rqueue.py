@@ -1,8 +1,16 @@
 import json
-from queue_service.utils import group_has_label
+from itertools import groupby
+from queue_service.utils import \
+    by_data_label, by_data_name, \
+    by_data_label_and_priority, by_data_name_and_priority
+
 
 class Rqueue:
+    # This is a list all Rqueue objects that will be instantiated
     all = []
+    # This is the grouped version os the instantiated queues, groups are necessary,
+        # to identify what lockable resource needs to be locked once there is a free resource
+    grouped_queues = []
 
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
@@ -61,21 +69,22 @@ class Rqueue:
             if rqueue.has_associated_resource:
                 rqueues_list.append(rqueue)
 
-        return rqueues_list
+        return sorted(rqueues_list, key=by_data_name_and_priority)
 
     @staticmethod
     def non_associated_resource_rqueues():
         '''
         Gets all the resources without an associated resource
             And it's with a label
-        :return: List:
+        :return: List, sorted by label:
         '''
         rqueues_list = []
         for rqueue in Rqueue.all:
             if rqueue.has_not_associated_resource:
                 rqueues_list.append(rqueue)
 
-        return rqueues_list
+
+        return sorted(rqueues_list, key=by_data_label_and_priority)
 
     @staticmethod
     def group_all():
@@ -86,11 +95,46 @@ class Rqueue:
         OR:
         Two or more queues that are interested to lock the resource with
             the same ID (or resource name), should be in the same group as well.
-        :return:
+        :return None:
         '''
-        group = []
 
+        # Unpacking is necessary:
+        #   first value is the group name
+        #   second value is the content of the group
+        # This needs to be done both types of queues (non/associated lockable resource)
+        for group_name, group in groupby(
+            Rqueue.non_associated_resource_rqueues(),
+            key=by_data_label
+        ):
+            Rqueue.grouped_queues.append(
+                {
+                    "group_name" : group_name,
+                    "group_type" : "label",
+                    "queues"     : list(group),
+                }
+            )
 
-        return group
+        for group_name, group in groupby(
+            Rqueue.associated_resource_rqueues(),
+            key=by_data_name
+        ):
+            Rqueue.grouped_queues.append(
+                {
+                    "group_name" : group_name,
+                    "group_type" : "name",
+                    "queues"     : list(group),
+                }
+            )
 
+    @staticmethod
+    def delete_all():
+        '''
+        A Static method to delete all the Rqueues list!
+        NOTE: obj reference could be deleted, but deleting the object
+            from Python's memory is a tough task and better to avoid:
+        SO reference link:
+        https://stackoverflow.com/questions/293431/python-object-deleting-itself
+        :return None:
+        '''
+        Rqueue.all.clear()
 
