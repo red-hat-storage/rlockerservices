@@ -1,3 +1,4 @@
 ---
 
-interval:1
+svc:
+  interval: 10
