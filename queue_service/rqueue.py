@@ -5,6 +5,7 @@ from queue_service.utils import (
     by_data_name,
     by_data_label_and_priority,
     by_data_name_and_priority,
+    json_continuously_loader,
 )
 
 
@@ -18,7 +19,7 @@ class Rqueue:
     def __init__(self, **kwargs):
         self.id = kwargs.get("id")
         self.priority = kwargs.get("priority")
-        self.data = json.loads(kwargs.get("data"))
+        self.data = json_continuously_loader(kwargs.get("data"))
 
         # Keep this line last, we want to store all the instances
         # after the init actions in a list
