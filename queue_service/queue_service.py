@@ -50,7 +50,11 @@ class QueueService(ServiceBase):
 
                 # If attempt to lock was successful:
                 if attempt_lock.json().get("is_locked"):
-                    rlocker.change_queue(next_queue.id, status=const.STATUS_FINISHED)
+                    #TODO: It might be better idea to display the final locked resource as an addition to queue's data JSON FIELD, currently we add to the description
+                    rlocker.change_queue(next_queue.id,
+                                         status=const.STATUS_FINISHED,
+                                         description=f"Final Resource:{next_resource.get('name')}"
+                                         )
                 else:
                     rlocker.change_queue(
                         next_queue.id,
@@ -139,7 +143,7 @@ class QueueService(ServiceBase):
         :return: None
         """
 
-        time.sleep(conf["svc"].get("INTERVAL"))
+        time.sleep(int(os.environ.get('INTERVAL'), conf["svc"].get("INTERVAL")))
         os.system("cls") if os.name == "nt" else os.system("clear")
         Rqueue.all.clear()
         Rqueue.grouped_queues.clear()
