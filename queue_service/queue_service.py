@@ -29,14 +29,34 @@ class QueueService(ServiceBase):
                 resources = rlocker.get_lockable_resources(
                     free_only=True, label_matches=group.get("group_name")
                 )
-                if not resources == []:
-                    group_queues = group.get("queues")
-                    next_queue = group_queues.pop(0)
-                    next_resource = resources.pop(0)
-                    rlocker.lock_resource(
-                        next_resource, signoff=f"cerginba-{next_queue.id}"
-                    )
+            elif group.get("group_type") == "name":
+                resources = rlocker.get_lockable_resources(
+                    free_only=True, name=group.get("group_name")
+                )
+            else:
+                raise Exception("Group type should be either name or label!")
+
+            if not resources == []:
+                group_queues = group.get("queues")
+                next_queue = group_queues.pop(0)
+                next_resource = resources.pop(0)
+
+                attempt_lock = rlocker.lock_resource(
+                    next_resource,
+                    signoff=next_queue.data.get("signoff"),
+                    link=next_queue.data.get("link"),
+                )
+                print(attempt_lock.json())
+
+                # If attempt to lock was successful:
+                if attempt_lock.json().get("is_locked"):
                     rlocker.change_queue(next_queue.id, status=const.STATUS_FINISHED)
+                else:
+                    rlocker.change_queue(
+                        next_queue.id,
+                        status=const.STATUS_FAILED,
+                        description=attempt_lock.text[:2048],
+                    )
 
         return None
 
@@ -71,7 +91,7 @@ class QueueService(ServiceBase):
                 else f"No queues to Initialize. \n"
             )
             print(
-                f"Total Services that are {const.STATUS_PENDING}: "
+                f"Total Queues that are {const.STATUS_PENDING}: "
                 f"{len(rlocker.get_queues(status=const.STATUS_PENDING))}"
             )
 
@@ -119,7 +139,7 @@ class QueueService(ServiceBase):
         :return: None
         """
 
-        time.sleep(conf["svc"].get("interval"))
+        time.sleep(conf["svc"].get("INTERVAL"))
         os.system("cls") if os.name == "nt" else os.system("clear")
         Rqueue.all.clear()
         Rqueue.grouped_queues.clear()

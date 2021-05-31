@@ -1,6 +1,3 @@
-import time
-
-
 class ServiceBase:
     def run(self):
         """
@@ -11,4 +8,7 @@ class ServiceBase:
         pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        time.sleep(1)
+        pass
+
+    def __enter__(self):
+        pass

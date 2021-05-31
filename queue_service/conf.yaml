@@ -1,4 +1,6 @@
 ---
 
 svc:
-  interval: 10
+  INTERVAL: 10
+  RESOURCE_LOCKER_URL: null
+  RESOURCE_LOCKER_TOKEN: null
