@@ -143,7 +143,7 @@ class QueueService(ServiceBase):
         :return: None
         """
 
-        time.sleep(int(os.environ.get('INTERVAL'), conf["svc"].get("INTERVAL")))
+        time.sleep(conf["svc"].get("INTERVAL"))
         os.system("cls") if os.name == "nt" else os.system("clear")
         Rqueue.all.clear()
         Rqueue.grouped_queues.clear()
