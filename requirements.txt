@@ -1,2 +1,2 @@
-rlockertools==0.2.5
+rlockertools==0.2.6
 pyyaml
