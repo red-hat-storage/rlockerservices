@@ -1,5 +1,8 @@
+from queue_service.queue_service import rlocker
 import json
 import sys
+import time
+import datetime
 
 
 by_data_label = lambda q: q.data.get("label")
@@ -39,3 +42,66 @@ def json_continuously_loader(json_string, attempts=10):
                 # Let's RAISE the original error
                 print("Unexpected error:", sys.exc_info()[0])
                 raise
+
+def calculate_time_diff_str(fmt, s1, s2):
+    '''
+    Calculate the differences by SECONDS between two time ranges,
+        in a given format
+    :param fmt:
+    :param dt1:
+    :param dt2:
+    :return:
+    '''
+    tdelta = datetime.datetime.strptime(s2, fmt) - datetime.datetime.strptime(s1, fmt)
+    return tdelta.seconds
+
+def queue_has_beat(
+        queue_id,
+        in_last_x_seconds=600,
+        interval=1
+):
+    '''
+    Before releasing the queue and locking the service, it is important
+    to check that the queue has beat from a client.
+    Because, if there is no beat by a client, a queue could be locked without having
+        a client that waits for that queue
+    And there is no reason to lock any resource if there is no beat by a client, it should be
+        aborted if there was no beat in the last x seconds
+    :param queue_id:
+    :param in_last_x_seconds:
+    :param interval:
+    :return:
+    '''
+    FMT = '%Y-%m-%d %H:%M:%S'
+    time_diffs = [1]
+    for _ in range(in_last_x_seconds):
+        queue_obj = rlocker.get_queue(queue_id)
+
+        now = datetime.datetime.utcnow().strftime(FMT)
+
+        # If the following is none, then it also means that there is no beat,
+        # In order to not break the logic of parsing str to datetime, it's a great idea to pass in
+        # some old date.
+        # And then the seconds calculation will still work
+        queue_last_beat = queue_obj.get('last_beat') if not 'None' else "1970-01-01T00:00:00.000000Z"
+
+        queue_last_beat_fmt_str = datetime.datetime.strptime(
+            queue_last_beat,
+            "%Y-%m-%dT%H:%M:%S.%f%z" # This is the only format that supports to read the time from JSON
+        ).strftime(FMT)
+
+        last_beat_in_seconds = calculate_time_diff_str(
+            FMT,
+            s1=queue_last_beat_fmt_str,
+            s2=now
+        )
+        if not last_beat_in_seconds < min(time_diffs, default="EMPTY"):
+            time_diffs.append(last_beat_in_seconds)
+            print(f"{queue_obj.get('id')} did not beat for {last_beat_in_seconds} seconds ... ")
+            time.sleep(interval)
+        else:
+            return True
+
+    else:
+        return False
+

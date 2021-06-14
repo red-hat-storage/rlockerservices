@@ -6,6 +6,7 @@ import pprint as pp
 from service_base.service_base import ServiceBase
 from queue_service import rlocker, conf
 from queue_service.rqueue import Rqueue
+from queue_service.utils import queue_has_beat
 
 
 class QueueService(ServiceBase):
@@ -40,27 +41,37 @@ class QueueService(ServiceBase):
                 group_queues = group.get("queues")
                 next_queue = group_queues.pop(0)
                 next_resource = resources.pop(0)
-
-                attempt_lock = rlocker.lock_resource(
-                    next_resource,
-                    signoff=next_queue.data.get("signoff"),
-                    link=next_queue.data.get("link"),
-                )
-                print(attempt_lock.json())
-
-                # If attempt to lock was successful:
-                if attempt_lock.json().get("is_locked"):
-                    # TODO: It might be better idea to display the final locked resource as an addition to queue's data JSON FIELD, currently we add to the description
-                    rlocker.change_queue(
-                        next_queue.id,
-                        status=const.STATUS_FINISHED,
-                        description=f"Final Resource:{next_resource.get('name')}",
+                if queue_has_beat(
+                    queue_id=next_queue.id,
+                    in_last_x_seconds=conf["svc"].get("QUEUE_BEAT_TIMEOUT"),
+                ):
+                    attempt_lock = rlocker.lock_resource(
+                        next_resource,
+                        signoff=next_queue.data.get("signoff"),
+                        link=next_queue.data.get("link"),
                     )
+                    print(attempt_lock.json())
+
+                    # If attempt to lock was successful:
+                    if attempt_lock.json().get("is_locked"):
+                        # TODO: It might be better idea to display the final locked resource as an addition to queue's data JSON FIELD, currently we add to the description
+                        rlocker.change_queue(
+                            next_queue.id,
+                            status=const.STATUS_FINISHED,
+                            description=f"Final Resource:{next_resource.get('name')}",
+                        )
+                    else:
+                        rlocker.change_queue(
+                            next_queue.id,
+                            status=const.STATUS_FAILED,
+                            description=attempt_lock.text[:2048],
+                        )
                 else:
-                    rlocker.change_queue(
+                    rlocker.abort_queue(
                         next_queue.id,
-                        status=const.STATUS_FAILED,
-                        description=attempt_lock.text[:2048],
+                        abort_msg=f'This queue was an orphan queue! \n'
+                        f'There was no associated client, because queue was not beating '
+                        f' in the last {conf["svc"].get("QUEUE_BEAT_TIMEOUT")} seconds'
                     )
 
         return None
