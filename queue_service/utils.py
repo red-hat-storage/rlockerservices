@@ -21,6 +21,9 @@ def json_continuously_loader(json_string, attempts=10):
     :param json_string:
     :return:
     """
+    if type(json_string) == dict:
+        return json_string
+
     loaded_json = None
     attempts = list(range(1, attempts + 1, 1))
     for attempt in attempts:
@@ -73,7 +76,7 @@ def queue_has_beat(
     :return:
     '''
     FMT = '%Y-%m-%d %H:%M:%S'
-    time_diffs = [1]
+    time_diffs = []
     for _ in range(in_last_x_seconds):
         queue_obj = rlocker.get_queue(queue_id)
 
@@ -83,19 +86,27 @@ def queue_has_beat(
         # In order to not break the logic of parsing str to datetime, it's a great idea to pass in
         # some old date.
         # And then the seconds calculation will still work
-        queue_last_beat = queue_obj.get('last_beat') if not 'None' else "1970-01-01T00:00:00.000000Z"
+        queue_last_beat = queue_obj.get('last_beat')
+        if queue_last_beat in [None, "None"]:
+            queue_last_beat = "1970-01-01T00:00:00.000000Z"
 
-        queue_last_beat_fmt_str = datetime.datetime.strptime(
-            queue_last_beat,
-            "%Y-%m-%dT%H:%M:%S.%f%z" # This is the only format that supports to read the time from JSON
-        ).strftime(FMT)
+        try:
+            queue_last_beat_fmt_str = datetime.datetime.strptime(
+                queue_last_beat,
+                "%Y-%m-%dT%H:%M:%S.%f%z" # This is the only format that supports to read the time from JSON
+            ).strftime(FMT)
+        except ValueError:
+            queue_last_beat_fmt_str = datetime.datetime.strptime(
+                queue_last_beat,
+                "%Y-%m-%dT%H:%M:%S%z" # This is the only format that supports to read from JSON, once the time is edited from admin panel!
+            ).strftime(FMT)
 
         last_beat_in_seconds = calculate_time_diff_str(
             FMT,
             s1=queue_last_beat_fmt_str,
             s2=now
         )
-        if not last_beat_in_seconds < min(time_diffs, default="EMPTY"):
+        if not last_beat_in_seconds < min(time_diffs, default=1):
             time_diffs.append(last_beat_in_seconds)
             print(f"{queue_obj.get('id')} did not beat for {last_beat_in_seconds} seconds ... ")
             time.sleep(interval)
