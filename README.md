@@ -1,4 +1,4 @@
-# Resource Locker project
+# Resource Locker Services project
 ## This project includes the services for [rlocker](https://github.com/jimdevops19/rlocker).
 
 ### Project Dependencies:
