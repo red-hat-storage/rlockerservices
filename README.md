@@ -19,7 +19,7 @@ Each directory represents a Python Package, that is being used as an independent
  - __queue_service:__ Service to handle the queues that are on PENDING state on [rlocker](https://github.com/jimdevops19/rlocker)
    - [__ init __.py](queue_service/__init__.py): Packaging this queue_service dir. We load the configurations in this __ __init__ __ file.
    - [constants.py](queue_service/constants.py): Constants for the package
-   - [defaultconf.yaml](queue_service/defaultconf.yaml): Default configurations of the svc if some of them passed as ENV variable.
+   - [defaultconf.yaml](queue_service/defaultconf.yaml): Default configurations of the svc. This will be used if some of them are NOT passed as ENV variable.
    - [queue_service.py](queue_service/queue_service.py): The file with the class to define methods, as well as what the svc will do when it is called from [run.py](run.py)
    - [rqueue.py](queue_service/rqueue.py): A Python class to objectify the resources that are grabbed from API calls.
    - [utils.py](queue_service/utils.py): Helping function for specific actions like time calculations.
