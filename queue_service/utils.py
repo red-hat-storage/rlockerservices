@@ -106,7 +106,7 @@ def queue_has_beat(
             s1=queue_last_beat_fmt_str,
             s2=now
         )
-        if not last_beat_in_seconds < min(time_diffs, default=1):
+        if not last_beat_in_seconds <= min(time_diffs, default=1):
             time_diffs.append(last_beat_in_seconds)
             print(f"{queue_obj.get('id')} did not beat for {last_beat_in_seconds} seconds ... ")
             time.sleep(interval)
