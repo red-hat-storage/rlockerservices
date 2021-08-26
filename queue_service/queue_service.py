@@ -4,10 +4,13 @@ import queue_service.constants as const
 import os
 import pprint as pp
 from service_base.service_base import ServiceBase
-from queue_service import rlocker, conf
+from queue_service import conf, get_time
 from queue_service.rqueue import Rqueue
 from queue_service.utils import queue_has_beat
+from queue_service.connection import ResourceLockerConnection
 
+
+rlocker = ResourceLockerConnection()
 
 class QueueService(ServiceBase):
     def __init__(self):
@@ -146,6 +149,8 @@ class QueueService(ServiceBase):
                   status of all queues.
              - Clear the variables content that are indexed each beat, so that we
                 will not have duplicated data on those variables
+             - Write to status.log current timestamp,
+                this will indicate the last time svc is healthy
 
         Handling Exception parameters that we need to receive:
         :param exc_type:
@@ -159,3 +164,9 @@ class QueueService(ServiceBase):
         os.system("cls") if os.name == "nt" else os.system("clear")
         Rqueue.all.clear()
         Rqueue.grouped_queues.clear()
+        with open(const.STATUS_LOGS_FILE, 'a') as f:
+            # For any new info to write, use comma-separation
+            # Please keep \n as the first log to be written
+            f.write(
+                f'\nTIMESTAMP:{get_time().timestamp()},'
+            )
