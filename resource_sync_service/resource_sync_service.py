@@ -18,4 +18,4 @@ class ResourceSyncService(ServiceBase):
 
     @staticmethod
     def run_prerequisites():
-        print('Prerequisites')
+        print("Prerequisites")
