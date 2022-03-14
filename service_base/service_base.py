@@ -11,4 +11,4 @@ class ServiceBase:
         pass
 
     def __enter__(self):
-        pass
+        return self

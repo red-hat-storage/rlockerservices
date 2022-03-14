@@ -15,5 +15,5 @@ STATUS_FINISHED = "FINISHED"
 QUEUE_SVC_PATH = Path(__file__).resolve().parent
 
 # Referenced constants:
-HEALTH_DIR_PATH = os.path.join(QUEUE_SVC_PATH, 'health')
-STATUS_LOGS_FILE = os.path.join(HEALTH_DIR_PATH, 'status.log')
+HEALTH_DIR_PATH = os.path.join(QUEUE_SVC_PATH, "health")
+STATUS_LOGS_FILE = os.path.join(HEALTH_DIR_PATH, "status.log")

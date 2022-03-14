@@ -7,10 +7,11 @@ from service_base.service_base import ServiceBase
 from queue_service import conf, get_time
 from queue_service.rqueue import Rqueue
 from queue_service.utils import queue_has_beat
-from queue_service.connection import ResourceLockerConnection
+from service_base.connection import ResourceLockerConnection
 
 
 rlocker = ResourceLockerConnection()
+
 
 class QueueService(ServiceBase):
     def __init__(self):
@@ -72,9 +73,9 @@ class QueueService(ServiceBase):
                 else:
                     rlocker.abort_queue(
                         next_queue.id,
-                        abort_msg=f'This queue was an orphan queue! \n'
-                        f'There was no associated client, because queue was not beating '
-                        f' in the last {conf["svc"].get("QUEUE_BEAT_TIMEOUT")} seconds'
+                        abort_msg=f"This queue was an orphan queue! \n"
+                        f"There was no associated client, because queue was not beating "
+                        f' in the last {conf["svc"].get("QUEUE_BEAT_TIMEOUT")} seconds',
                     )
 
         return None
@@ -135,9 +136,6 @@ class QueueService(ServiceBase):
 
         return None
 
-    def __enter__(self):
-        return self
-
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         We use context manager to describe what the service should to as post
@@ -164,9 +162,7 @@ class QueueService(ServiceBase):
         os.system("cls") if os.name == "nt" else os.system("clear")
         Rqueue.all.clear()
         Rqueue.grouped_queues.clear()
-        with open(const.STATUS_LOGS_FILE, 'a') as f:
+        with open(const.STATUS_LOGS_FILE, "a") as f:
             # For any new info to write, use comma-separation
             # Please keep \n as the first log to be written
-            f.write(
-                f'\nTIMESTAMP:{get_time().timestamp()},'
-            )
+            f.write(f"\nTIMESTAMP:{get_time().timestamp()},")
