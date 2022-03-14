@@ -7,7 +7,7 @@ from service_base.service_base import ServiceBase
 from queue_service import conf, get_time
 from queue_service.rqueue import Rqueue
 from queue_service.utils import queue_has_beat
-from queue_service.connection import ResourceLockerConnection
+from service_base.connection import ResourceLockerConnection
 
 
 rlocker = ResourceLockerConnection()
@@ -134,9 +134,6 @@ class QueueService(ServiceBase):
             )
 
         return None
-
-    def __enter__(self):
-        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """

@@ -1,4 +1,4 @@
-from queue_service.connection import ResourceLockerConnection
+from service_base.connection import ResourceLockerConnection
 import json
 import sys
 import time
