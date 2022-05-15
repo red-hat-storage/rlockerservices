@@ -3,6 +3,7 @@ import sys
 import queue_service.constants as const
 import os
 import pprint as pp
+import threading
 from service_base.service_base import ServiceBase
 from queue_service import conf, get_time
 from queue_service.rqueue import Rqueue
@@ -41,41 +42,29 @@ class QueueService(ServiceBase):
             else:
                 raise Exception("Group type should be either name or label!")
 
-            if not resources == []:
+            if resources:
+                # Prepare by waiting for the next beat by the client
+
+                # Get the info from the waiting queue list of dicts:
                 group_queues = group.get("queues")
                 next_queue = group_queues.pop(0)
                 next_resource = resources.pop(0)
-                if queue_has_beat(
-                    queue_id=next_queue.id,
-                    in_last_x_seconds=conf["svc"].get("QUEUE_BEAT_TIMEOUT"),
-                ):
-                    attempt_lock = rlocker.lock_resource(
-                        next_resource,
-                        signoff=next_queue.data.get("signoff"),
-                        link=next_queue.data.get("link"),
+                # Change to almost finished:
+                prepare_finalize_queue = rlocker.change_queue(
+                    next_queue.id,
+                    status=const.STATUS_ALMOST_FINISHED,
+                )
+                # Prepare the actions before entering to the thread:
+                if prepare_finalize_queue.json().get('status') == const.STATUS_ALMOST_FINISHED:
+                    # The convention for the thread name is Thread-$QID.
+                    # Please do not change unless decided to change naming convention
+                    thread_name = f"Thread-{next_queue.id}"
+                    t = threading.Thread(
+                        name=thread_name,
+                        target=self.queue_beat_check,
+                        args=(next_queue, next_resource)
                     )
-                    print(attempt_lock.json())
-
-                    # If attempt to lock was successful:
-                    if attempt_lock.json().get("is_locked"):
-                        rlocker.change_queue(
-                            next_queue.id,
-                            status=const.STATUS_FINISHED,
-                            final_resource=next_resource.get('name'),
-                        )
-                    else:
-                        rlocker.change_queue(
-                            next_queue.id,
-                            status=const.STATUS_FAILED,
-                            description=attempt_lock.text[:2048],
-                        )
-                else:
-                    rlocker.abort_queue(
-                        next_queue.id,
-                        abort_msg=f"This queue was an orphan queue! \n"
-                        f"There was no associated client, because queue was not beating "
-                        f' in the last {conf["svc"].get("QUEUE_BEAT_TIMEOUT")} seconds',
-                    )
+                    t.start()
 
         return None
 
@@ -134,6 +123,50 @@ class QueueService(ServiceBase):
             )
 
         return None
+
+    def queue_beat_check(self, next_queue, next_resource):
+        if queue_has_beat(
+                queue_id=next_queue.id,
+                in_last_x_seconds=conf["svc"].get("QUEUE_BEAT_TIMEOUT"),
+        ):
+            attempt_lock = rlocker.lock_resource(
+                next_resource,
+                signoff=next_queue.data.get("signoff"),
+                link=next_queue.data.get("link"),
+            )
+            print(attempt_lock.json())
+
+            # If attempt to lock was successful:
+            if attempt_lock.json().get("is_locked"):
+                rlocker.change_queue(
+                    next_queue.id,
+                    status=const.STATUS_FINISHED,
+                    final_resource=next_resource.get('name'),
+                )
+            else:
+                if attempt_lock.status_code == 406: # Not Acceptable Status mode
+                    rlocker.change_queue(
+                        next_queue.id,
+                        status=const.STATUS_PENDING,
+                        description="Queue is is retry mode, please check the metadata section for more info",
+                        retry="1+",
+                        retry_custom_msg=f"This queue attempted to try to lock a resource [{next_resource.get('name')}] "
+                                          "that conflicts with other search_string that was on queue earlier. "
+                                          "Since, it went back to the pending state!"
+                    )
+                else:
+                    rlocker.change_queue(
+                        next_queue.id,
+                        status=const.STATUS_FAILED,
+                        description=attempt_lock.text[:2048],
+                    )
+        else:
+            rlocker.abort_queue(
+                next_queue.id,
+                abort_msg=f"This queue was an orphan queue! \n"
+                f"There was no associated client, because queue was not beating "
+                f' in the last {conf["svc"].get("QUEUE_BEAT_TIMEOUT")} seconds',
+            )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
