@@ -65,6 +65,8 @@ class QueueService(ServiceBase):
                         args=(next_queue, next_resource)
                     )
                     t.start()
+                    # More than one thread should not start at the same timestamp
+                    t.join(timeout=0.75)
 
         return None
 
