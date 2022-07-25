@@ -45,4 +45,4 @@ Each directory represents a Python Package, that is being used as an independent
  - Launch the queue_service
    - `python run.py --svc-kind queue_service`
  - Next Steps:
-   - Visit the [rlockerservices](https://github.com/red-hat-storage/rlockertools) project in order to ask for lockable resources automatically from the rlocker-cli. 
+   - Visit the [rlockertools](https://github.com/red-hat-storage/rlockertools) project in order to ask for lockable resources automatically from the rlocker-cli. 
