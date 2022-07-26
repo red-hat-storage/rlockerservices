@@ -31,7 +31,7 @@ Each directory represents a Python Package, that is being used as an independent
  - The following are commands to run in your terminal, each line represents a pattern of:   `command to run` __Explanation__
    - `git clone https://github.com/red-hat-storage/rlockerservices.git` __Clones the project__
    - `cd rlockerservices` __Change directory__
-   - `python --version` __Python3.8 is required! (Python3.9 not tested, Python3.10 not supported)__
+   - `python --version` __Python3.8.5 is required! (Python3.9 not tested, Python3.10 not supported)__
    - `python -m venv venv` __Create a virtual environment for this Python service__ (Note: Use python3.8 instead if your default python is something else)
    - The following command differs from Windows to Linux systems:
      - `venv\Scripts\activate` __Run this to activate the venv on Windows__
