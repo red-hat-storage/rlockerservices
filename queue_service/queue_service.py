@@ -55,14 +55,17 @@ class QueueService(ServiceBase):
                     status=const.STATUS_ALMOST_FINISHED,
                 )
                 # Prepare the actions before entering to the thread:
-                if prepare_finalize_queue.json().get('status') == const.STATUS_ALMOST_FINISHED:
+                if (
+                    prepare_finalize_queue.json().get("status")
+                    == const.STATUS_ALMOST_FINISHED
+                ):
                     # The convention for the thread name is Thread-$QID.
                     # Please do not change unless decided to change naming convention
                     thread_name = f"Thread-{next_queue.id}"
                     t = threading.Thread(
                         name=thread_name,
                         target=self.queue_beat_check,
-                        args=(next_queue, next_resource)
+                        args=(next_queue, next_resource),
                     )
                     t.start()
                     # More than one thread should not start at the same timestamp
@@ -128,8 +131,8 @@ class QueueService(ServiceBase):
 
     def queue_beat_check(self, next_queue, next_resource):
         if queue_has_beat(
-                queue_id=next_queue.id,
-                in_last_x_seconds=conf["svc"].get("QUEUE_BEAT_TIMEOUT"),
+            queue_id=next_queue.id,
+            in_last_x_seconds=conf["svc"].get("QUEUE_BEAT_TIMEOUT"),
         ):
             attempt_lock = rlocker.lock_resource(
                 next_resource,
@@ -143,18 +146,18 @@ class QueueService(ServiceBase):
                 rlocker.change_queue(
                     next_queue.id,
                     status=const.STATUS_FINISHED,
-                    final_resource=next_resource.get('name'),
+                    final_resource=next_resource.get("name"),
                 )
             else:
-                if attempt_lock.status_code == 406: # Not Acceptable Status mode
+                if attempt_lock.status_code == 406:  # Not Acceptable Status mode
                     rlocker.change_queue(
                         next_queue.id,
                         status=const.STATUS_PENDING,
                         description="Queue is is retry mode, please check the metadata section for more info",
                         retry="1+",
                         retry_custom_msg=f"This queue attempted to try to lock a resource [{next_resource.get('name')}] "
-                                          "that conflicts with other search_string that was on queue earlier. "
-                                          "Since, it went back to the pending state!"
+                        "that conflicts with other search_string that was on queue earlier. "
+                        "Since, it went back to the pending state!",
                     )
                 else:
                     rlocker.change_queue(

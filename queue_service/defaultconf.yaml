@@ -1,7 +1,7 @@
 ---
 
 svc:
-  INTERVAL: 10
-  QUEUE_BEAT_TIMEOUT: 300
+  INTERVAL: 10 # Interval seconds for pulling the queues
+  QUEUE_BEAT_TIMEOUT: 300 # If the queue did not respond for X seconds specified here, it will be aborted
   RESOURCE_LOCKER_URL: null
   RESOURCE_LOCKER_TOKEN: null
