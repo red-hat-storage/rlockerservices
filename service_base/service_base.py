@@ -1,3 +1,4 @@
+# A Blueprint class how a service should be implemented
 class ServiceBase:
     def run(self):
         """

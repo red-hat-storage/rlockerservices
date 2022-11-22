@@ -1,5 +1,9 @@
 from argparse import ArgumentParser
 
+# Run file for the different services in this repository
+# If new service is created, Create a function including the code with desired actions
+# Create also a key value pair inside the action_locators dictionary
+
 
 def actions_queue_service():
     from queue_service.queue_service import QueueService
@@ -9,19 +13,8 @@ def actions_queue_service():
             svc.run()
 
 
-def actions_resource_sync_service():
-    from resource_sync_service.resource_sync_service import ResourceSyncService
-
-    ResourceSyncService.run_prerequisites()
-
-    while True:
-        with ResourceSyncService() as svc:
-            svc.run()
-
-
 action_locators = {
     "queue_service": actions_queue_service,
-    "resource_sync_service": actions_resource_sync_service,
 }
 
 parser = ArgumentParser()
