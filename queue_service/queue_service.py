@@ -196,7 +196,7 @@ class QueueService(ServiceBase):
         """
 
         time.sleep(conf["svc"].get("INTERVAL"))
-        os.system("cls") if os.name == "nt" else os.system("clear")
+        # os.system("cls") if os.name == "nt" else os.system("clear")
         Rqueue.all.clear()
         Rqueue.grouped_queues.clear()
         with open(const.STATUS_LOGS_FILE, "a") as f:
