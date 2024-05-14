@@ -42,6 +42,7 @@ Each directory represents a Python Package, that is being used as an independent
      - Click the dropdown in the top navigation bar, near your logged-in username, select `Copy API Token`. Your users API token should be copied to the clipboard (Could be pasted the next time you send a Ctrl+V) 
      - `export RESOURCE_LOCKER_TOKEN='<YOUR_COPIED_TOKEN>'` Set this env variable. The wrapping with single quotes is important!
      - `export RESOURCE_LOCKER_URL='<YOUR_URL_OF_RESOURCE_LOCKER>'` Set this env variable. The wrapping with single quotes is important! (for i.e: http://127.0.0.1:8000)
+     - `export REQUESTS_CA_BUNDLE=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem` for Resource locker accessible via https
  - Launch the queue_service
    - `python run.py --svc-kind queue_service`
  - Next Steps:
