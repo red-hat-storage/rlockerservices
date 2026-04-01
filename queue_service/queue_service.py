@@ -2,8 +2,9 @@ import time
 import sys
 import queue_service.constants as const
 import os
-import pprint as pp
+from pprint import pformat
 import threading
+import logging
 from service_base.service_base import ServiceBase
 from queue_service import conf, get_time
 from queue_service.rqueue import Rqueue
@@ -11,6 +12,7 @@ from queue_service.utils import queue_has_beat
 from service_base.connection import ResourceLockerConnection
 
 
+logger = logging.getLogger(__name__)
 rlocker = ResourceLockerConnection()
 
 
@@ -29,7 +31,7 @@ class QueueService(ServiceBase):
         self.pending_queues = rlocker.get_queues(status=const.STATUS_PENDING)
         self.instantiate_pending_queue_objects()
         Rqueue.group_all()
-        pp.pprint(Rqueue.grouped_queues)
+        logger.info(f"Grouped queues: {pformat(Rqueue.grouped_queues)}")
         for group in Rqueue.grouped_queues:
             if group.get("group_type") == "label":
                 resources = rlocker.get_lockable_resources(
@@ -89,24 +91,14 @@ class QueueService(ServiceBase):
                 dict(queue_response.json()).get("status") == const.STATUS_PENDING
             )
             if not is_queue_changed:
-                print(
-                    f"There was a problem changing queue with ID {queue_id} to {const.STATUS_PENDING}! \n"
-                    f"Unrecoverable error. Service Exiting..."
-                )
+                logger.error(f"There was a problem changing queue with ID {queue_id} to {const.STATUS_PENDING}! Unrecoverable error. Service Exiting...")
                 sys.exit()
 
         else:
             # All the checks did not enter if not is_queue_changed.
             # Therefore, service is ready to keep running.
-            print(
-                f"Service put all queues on {const.STATUS_PENDING} successfully! \n"
-                if len(self.initializing_queues) > 0
-                else f"No queues to Initialize. \n"
-            )
-            print(
-                f"Total Queues that are {const.STATUS_PENDING}: "
-                f"{len(rlocker.get_queues(status=const.STATUS_PENDING))}"
-            )
+            logger.info(f"Service put all queues on {const.STATUS_PENDING} successfully!" if len(self.initializing_queues) > 0 else "No queues to Initialize.")
+            logger.info(f"Total Queues that are {const.STATUS_PENDING}: {len(rlocker.get_queues(status=const.STATUS_PENDING))}")
 
         return None
 
@@ -139,7 +131,7 @@ class QueueService(ServiceBase):
                 signoff=next_queue.data.get("signoff"),
                 link=next_queue.data.get("link"),
             )
-            print(attempt_lock.json())
+            logger.info(f"Lock attempt result: {attempt_lock.json()}")
 
             # If attempt to lock was successful:
             if attempt_lock.json().get("is_locked"):
