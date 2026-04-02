@@ -3,7 +3,10 @@ import json
 import sys
 import time
 import datetime
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 by_data_label = lambda q: q.data.get("label")
 by_data_name = lambda q: q.data.get("name")
@@ -38,15 +41,13 @@ def json_continuously_loader(json_string, attempts=10):
             return loaded_json  # If it is a python dictionary, lets return it
         except ValueError:
             if attempt != attempts[-1]:
-                print(
-                    "The loaded json is still not a dictionary, trying to parse again the same json ... \n"
-                )
+                logger.warning("The loaded json is still not a dictionary, trying to parse again the same json ...")
                 json_string = loaded_json
-                print(loaded_json)
+                logger.debug(f"Loaded json value: {loaded_json}")
             else:
                 # If after 10 tries, we we're not able to return loaded_json, something went wrong.
                 # Let's RAISE the original error
-                print("Unexpected error:", sys.exc_info()[0])
+                logger.error(f"Unexpected error: {sys.exc_info()[0]}")
                 raise
 
 
@@ -107,9 +108,7 @@ def queue_has_beat(queue_id, in_last_x_seconds=600, interval=1):
         )
         if not last_beat_in_seconds <= min(time_diffs, default=1):
             time_diffs.append(last_beat_in_seconds)
-            print(
-                f"{queue_obj.get('id')} did not beat for {last_beat_in_seconds} seconds ... "
-            )
+            logger.info(f"Queue {queue_obj.get('id')} did not beat for {last_beat_in_seconds} seconds ...")
             time.sleep(interval)
         else:
             return True

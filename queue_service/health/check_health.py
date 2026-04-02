@@ -6,7 +6,11 @@
 # python -m queue_service.health.check_health
 import queue_service.constants as const
 import sys
+import logging
 from queue_service import get_time, conf
+
+
+logger = logging.getLogger(__name__)
 
 
 class CheckHealth:
@@ -54,11 +58,11 @@ class CheckHealth:
             self.get_current_timestamp() - self.get_latest_healthy_timestamp()
         )
         if self.max_timestamp_diff_allowed > timestamp_diff:
-            print("QUEUE_SVC IS HEALTHY")
+            logger.info("QUEUE_SVC IS HEALTHY")
         else:
             # Decide what to do depending on the not_healthy_action
             if not_healthy_action == "EXIT":
-                print("QUEUE_SVC IS NOT HEALTHY")
+                logger.error("QUEUE_SVC IS NOT HEALTHY")
                 sys.exit(-1)
 
 
@@ -74,4 +78,4 @@ if __name__ == "__main__":
         # We do not want to failure with exit code non-zero because
         # of the bugs in our code!
         # In this case, please debug locally and not on an orchestration platform!
-        print("Script did not run successfully!\n" "Error is:", e)
+        logger.error(f"Script did not run successfully! Error is: {e}")
